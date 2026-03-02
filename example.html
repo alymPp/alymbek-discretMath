@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DiscreteCalc — калькулятор по дискретной математике</title>
+  <style>
+    :root {
+  --bg: #0b1220;
+  --card: #111a2e;
+  --text: #e8eefc;
+  --muted: #a9b6d6;
+  --line: rgba(255,255,255,0.08);
+  --primary: #4ea1ff;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: radial-gradient(1200px 600px at 10% 0%, #162544 0%, var(--bg) 60%);
+  color: var(--text);
+}
+
+.app { max-width: 980px; margin: 0 auto; padding: 24px 16px 40px; }
+
+.header h1 { margin: 0; font-size: 30px; letter-spacing: 0.2px; }
+.sub { margin: 6px 0 0; color: var(--muted); }
+
+.tabs { display: flex; gap: 10px; margin: 18px 0 18px; flex-wrap: wrap; }
+.tab {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.tab.active { border-color: rgba(78,161,255,0.6); box-shadow: 0 0 0 3px rgba(78,161,255,0.15); }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+  margin: 0 0 14px;
+}
+
+.label { display: block; margin: 10px 0 6px; color: var(--muted); font-size: 14px; }
+.input, select.input {
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,0.25);
+  color: var(--text);
+  outline: none;
+}
+
+.row { display: flex; gap: 10px; margin: 12px 0 0; flex-wrap: wrap; }
+
+.btn {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,0.25);
+  color: var(--text);
+  cursor: pointer;
+}
+.btn.primary { border-color: rgba(78,161,255,0.7); background: rgba(78,161,255,0.15); }
+
+.hint {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+.hint code {
+  background: rgba(255,255,255,0.08);
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+.out {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.tableWrap { overflow-x: auto; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 520px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: center;
+}
+th { color: var(--muted); font-weight: 600; }
+
+.badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,0.25);
+}
+
+.footer { margin-top: 18px; color: var(--muted); font-size: 13px; }
+.small { color: var(--muted); }
+  </style>
+
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>DiscreteCalc</h1>
+      <p class="sub">Булева алгебра + Множества (HTML/CSS/JS)</p>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Разделы">
+      <button class="tab active" data-tab="logic" role="tab">Булева алгебра</button>
+      <button class="tab" data-tab="sets" role="tab">Множества</button>
+      <button class="tab" data-tab="about" role="tab">Справка</button>
+    </nav>
+
+    <main class="content">
+      <!-- LOGIC -->
+      <section id="logic" class="panel active" role="tabpanel">
+        <div class="card">
+          <h2>Таблица истинности</h2>
+
+          <label class="label">Выражение</label>
+          <input id="expr1" class="input" value="!A & (B | C)" />
+
+          <div class="hint">
+            Операторы: <code>!</code> НЕ, <code>&</code> И, <code>|</code> ИЛИ,
+            <code>^</code> XOR, <code>-></code> импликация, <code><-></code> эквивалентность.
+            Переменные: <code>A,B,C,...</code>
+          </div>
+
+          <div class="row">
+            <button id="btnTruth" class="btn primary">Построить таблицу</button>
+            <button id="btnClearTruth" class="btn">Очистить</button>
+          </div>
+
+          <div id="truthOut" class="out"></div>
+        </div>
+
+        <div class="card">
+          <h2>Проверка эквивалентности</h2>
+
+          <label class="label">Выражение 1</label>
+          <input id="eqA" class="input" value="A -> B" />
+
+          <label class="label">Выражение 2</label>
+          <input id="eqB" class="input" value="(!A) | B" />
+
+          <div class="row">
+            <button id="btnEq" class="btn primary">Проверить</button>
+            <button id="btnClearEq" class="btn">Очистить</button>
+          </div>
+
+          <div id="eqOut" class="out"></div>
+        </div>
+      </section>
+
+      <!-- SETS -->
+      <section id="sets" class="panel" role="tabpanel">
+        <div class="card">
+          <h2>Операции над множествами</h2>
+
+          <label class="label">Множество A</label>
+          <input id="setA" class="input" value="{1,2,3,4}" />
+
+          <label class="label">Множество B</label>
+          <input id="setB" class="input" value="{3,4,5}" />
+
+          <label class="label">Операция</label>
+          <select id="setOp" class="input">
+            <option value="union">A ∪ B (объединение)</option>
+            <option value="inter">A ∩ B (пересечение)</option>
+            <option value="diff">A \\ B (разность)</option>
+            <option value="sym">A △ B (симм. разность)</option>
+          </select>
+
+          <div class="row">
+            <button id="btnSet" class="btn primary">Посчитать</button>
+            <button id="btnClearSet" class="btn">Очистить</button>
+          </div>
+
+          <div class="hint">
+            Формат ввода: <code>{1,2,3}</code> или <code>{a,b,c}</code>. Пробелы можно.
+          </div>
+
+          <div id="setOut" class="out"></div>
+        </div>
+      </section>
+
+      <!-- ABOUT -->
+      <section id="about" class="panel" role="tabpanel">
+        <div class="card">
+          <h2>Справка</h2>
+          <ul>
+            <li><b>Булева алгебра:</b> строим таблицу истинности перебором всех наборов 0/1.</li>
+            <li><b>Эквивалентность:</b> два выражения эквивалентны, если результаты совпадают на всех наборах.</li>
+            <li><b>Множества:</b> парсим ввод вида <code>{...}</code> и выполняем операцию.</li>
+          </ul>
+          <p class="small">
+            Под Pages: залей файлы в репозиторий → Settings → Pages → Deploy from branch.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Made for дискретка ✅</span>
+    </footer>
+  </div>
+
+  <script > // ===== Tabs =====
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ===== Helpers =====
+function uniq(arr) {
+  return [...new Set(arr)];
+}
+
+function extractVars(expr) {
+  // Variables are single uppercase letters: A, B, C...
+  const m = expr.match(/[A-Z]/g);
+  return uniq(m || []).sort();
+}
+
+function tokenize(expr) {
+  // Normalize spaces
+  let s = expr.replace(/\s+/g, "");
+
+  // We will transform:
+  // !  -> !
+  // &  -> &
+  // |  -> |
+  // ^  -> ^
+  // -> -> ->
+  // <-> -> <->
+  // parentheses and variables
+  const tokens = [];
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+
+    if (ch === "<" && s.slice(i, i + 3) === "<->") {
+      tokens.push("<->");
+      i += 2;
+      continue;
+    }
+    if (ch === "-" && s.slice(i, i + 2) === "->") {
+      tokens.push("->");
+      i += 1;
+      continue;
+    }
+
+    if ("!&|^()".includes(ch)) {
+      tokens.push(ch);
+      continue;
+    }
+
+    if (/[A-Z]/.test(ch)) {
+      tokens.push(ch);
+      continue;
+    }
+
+    throw new Error("Недопустимый символ: " + ch);
+  }
+  return tokens;
+}
+
+// Shunting-yard to RPN
+const PRECEDENCE = {
+  "!": 5,
+  "&": 4,
+  "^": 3,
+  "|": 2,
+  "->": 1,
+  "<->": 0
+};
+const RIGHT_ASSOC = new Set(["!", "->"]); // ! unary, -> right associative
+
+function toRPN(tokens) {
+  const out = [];
+  const stack = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+
+    if (/[A-Z]/.test(t)) {
+      out.push(t);
+      continue;
+    }
+
+    if (t === "(") {
+      stack.push(t);
+      continue;
+    }
+    if (t === ")") {
+      while (stack.length && stack[stack.length - 1] !== "(") {
+        out.push(stack.pop());
+      }
+      if (!stack.length) throw new Error("Скобки не совпадают");
+      stack.pop(); // remove "("
+      continue;
+    }
+
+    // operator
+    if (!(t in PRECEDENCE)) throw new Error("Неизвестный оператор: " + t);
+
+    // unary ! can appear multiple times: !!!A
+    while (stack.length) {
+      const top = stack[stack.length - 1];
+      if (!(top in PRECEDENCE)) break;
+
+      const pTop = PRECEDENCE[top];
+      const pT = PRECEDENCE[t];
+
+      const cond = RIGHT_ASSOC.has(t) ? (pT < pTop) : (pT <= pTop);
+      if (cond) out.push(stack.pop());
+      else break;
+    }
+    stack.push(t);
+  }
+
+  while (stack.length) {
+    const t = stack.pop();
+    if (t === "(" || t === ")") throw new Error("Скобки не совпадают");
+    out.push(t);
+  }
+
+  return out;
+}
+
+function evalRPN(rpn, env) {
+  const st = [];
+  for (const t of rpn) {
+    if (/[A-Z]/.test(t)) {
+      st.push(Boolean(env[t]));
+      continue;
+    }
+    if (t === "!") {
+      if (st.length < 1) throw new Error("Ошибка: ! требует 1 операнд");
+      const a = st.pop();
+      st.push(!a);
+      continue;
+    }
+    // binary
+    if (st.length < 2) throw new Error("Ошибка: оператор требует 2 операнда");
+    const b = st.pop();
+    const a = st.pop();
+
+    switch (t) {
+      case "&": st.push(a && b); break;
+      case "|": st.push(a || b); break;
+      case "^": st.push((a && !b) || (!a && b)); break;
+      case "->": st.push((!a) || b); break;
+      case "<->": st.push(a === b); break;
+      default: throw new Error("Неизвестный оператор: " + t);
+    }
+  }
+  if (st.length !== 1) throw new Error("Ошибка выражения (лишние операнды?)");
+  return st[0];
+}
+
+function compile(expr) {
+  const tokens = tokenize(expr);
+  const rpn = toRPN(tokens);
+  const vars = extractVars(expr);
+  return { rpn, vars };
+}
+
+function genAssignments(vars) {
+  const n = vars.length;
+  const res = [];
+  const total = 1 << n;
+  for (let mask = 0; mask < total; mask++) {
+    const env = {};
+    for (let i = 0; i < n; i++) {
+      // High bit first just for nicer table (A changes slowest)
+      const bit = (mask >> (n - 1 - i)) & 1;
+      env[vars[i]] = bit === 1;
+    }
+    res.push(env);
+  }
+  return res;
+}
+
+function boolTo01(v) { return v ? "1" : "0"; }
+
+function renderTruthTable(expr, compiled) {
+  const { vars, rpn } = compiled;
+  const rows = genAssignments(vars).map(env => {
+    const val = evalRPN(rpn, env);
+    return { env, val };
+  });
+
+  let html = `<div class="badge">Переменные: <b>${vars.join(", ") || "—"}</b></div>`;
+  html += `<div class="tableWrap"><table><thead><tr>`;
+  for (const v of vars) html += `<th>${v}</th>`;
+  html += `<th>F</th></tr></thead><tbody>`;
+
+  for (const r of rows) {
+    html += `<tr>`;
+    for (const v of vars) html += `<td>${boolTo01(r.env[v])}</td>`;
+    html += `<td><b>${boolTo01(r.val)}</b></td>`;
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table></div>`;
+  html += `<div class="hint">F = ${escapeHtml(expr)}</div>`;
+  return html;
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+// ===== Logic UI =====
+const expr1 = document.getElementById("expr1");
+const truthOut = document.getElementById("truthOut");
+document.getElementById("btnTruth").addEventListener("click", () => {
+  try {
+    const c = compile(expr1.value);
+    truthOut.innerHTML = renderTruthTable(expr1.value, c);
+  } catch (e) {
+    truthOut.innerHTML = `<div class="badge">Ошибка: ${escapeHtml(e.message)}</div>`;
+  }
+});
+document.getElementById("btnClearTruth").addEventListener("click", () => {
+  truthOut.innerHTML = "";
+});
+
+// Equivalence
+const eqA = document.getElementById("eqA");
+const eqB = document.getElementById("eqB");
+const eqOut = document.getElementById("eqOut");
+
+document.getElementById("btnEq").addEventListener("click", () => {
+  try {
+    const c1 = compile(eqA.value);
+    const c2 = compile(eqB.value);
+
+    const vars = uniq([...c1.vars, ...c2.vars]).sort();
+    const assigns = genAssignments(vars);
+
+    let same = true;
+    let counterExample = null;
+
+    for (const env of assigns) {
+      const v1 = evalRPN(c1.rpn, env);
+      const v2 = evalRPN(c2.rpn, env);
+      if (v1 !== v2) {
+        same = false;
+        counterExample = { env, v1, v2 };
+        break;
+      }
+    }
+
+    if (same) {
+      eqOut.innerHTML = `<div class="badge">✅ Эквивалентны (совпадают на всех наборах)</div>`;
+    } else {
+      const envStr = vars.map(v => `${v}=${boolTo01(counterExample.env[v])}`).join(", ");
+      eqOut.innerHTML =
+        `<div class="badge">❌ Неэквивалентны</div>
+         <div class="hint">Контрпример: <b>${escapeHtml(envStr)}</b>
+         → F1=${boolTo01(counterExample.v1)}, F2=${boolTo01(counterExample.v2)}</div>`;
+    }
+  } catch (e) {
+    eqOut.innerHTML = `<div class="badge">Ошибка: ${escapeHtml(e.message)}</div>`;
+  }
+});
+
+document.getElementById("btnClearEq").addEventListener("click", () => {
+  eqOut.innerHTML = "";
+});
+
+// ===== Sets =====
+function parseSet(str) {
+  const s = str.trim();
+  if (!s.startsWith("{") || !s.endsWith("}")) {
+    throw new Error("Множество должно быть в фигурных скобках: {1,2,3}");
+  }
+  const inner = s.slice(1, -1).trim();
+  if (inner === "") return new Set();
+
+  // Split by commas
+  const items = inner.split(",").map(x => x.trim()).filter(Boolean);
+  return new Set(items);
+}
+
+function setToString(set) {
+  const arr = [...set];
+  // Sort nicely: numbers first if possible
+  arr.sort((a, b) => {
+    const na = Number(a), nb = Number(b);
+    const aIsNum = !Number.isNaN(na) && a !== "";
+    const bIsNum = !Number.isNaN(nb) && b !== "";
+    if (aIsNum && bIsNum) return na - nb;
+    if (aIsNum) return -1;
+    if (bIsNum) return 1;
+    return a.localeCompare(b);
+  });
+  return "{ " + arr.join(", ") + " }";
+}
+
+function setUnion(A, B) {
+  const r = new Set(A);
+  for (const x of B) r.add(x);
+  return r;
+}
+function setInter(A, B) {
+  const r = new Set();
+  for (const x of A) if (B.has(x)) r.add(x);
+  return r;
+}
+function setDiff(A, B) {
+  const r = new Set();
+  for (const x of A) if (!B.has(x)) r.add(x);
+  return r;
+}
+function setSym(A, B) {
+  return setUnion(setDiff(A, B), setDiff(B, A));
+}
+
+const setA = document.getElementById("setA");
+const setB = document.getElementById("setB");
+const setOp = document.getElementById("setOp");
+const setOut = document.getElementById("setOut");
+
+document.getElementById("btnSet").addEventListener("click", () => {
+  try {
+    const A = parseSet(setA.value);
+    const B = parseSet(setB.value);
+
+    let R;
+    let title;
+    switch (setOp.value) {
+      case "union": R = setUnion(A, B); title = "A ∪ B"; break;
+      case "inter": R = setInter(A, B); title = "A ∩ B"; break;
+      case "diff": R = setDiff(A, B); title = "A \\ B"; break;
+      case "sym": R = setSym(A, B); title = "A △ B"; break;
+      default: throw new Error("Неизвестная операция");
+    }
+
+    setOut.innerHTML =
+      `<div class="badge"><b>${escapeHtml(title)}</b> = ${escapeHtml(setToString(R))}</div>
+       <div class="hint"> |A| = ${A.size}, |B| = ${B.size}, |Результат| = ${R.size}</div>`;
+  } catch (e) {
+    setOut.innerHTML = `<div class="badge">Ошибка: ${escapeHtml(e.message)}</div>`;
+  }
+});
+
+document.getElementById("btnClearSet").addEventListener("click", () => {
+  setOut.innerHTML = "";
+}); </script>
+</body>
+</html>
